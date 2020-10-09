@@ -243,14 +243,15 @@ def run_stage(sessions, stage, test_block_config):
 
     delay(stage, "before", test_block_config["variables"])
 
-    logger.info("Running stage : %s", name)
-
     provider = TinctureProvider(stage)
     provider.start_tinctures(stage)
 
+    logger.info("Running stage : %s", name)
     response = r.run()
+    logger.debug("Stage done")
 
     provider.end_tinctures(response)
+    logger.debug("tinctures done")
 
     for v in verifiers:
         saved = v.verify(response)
