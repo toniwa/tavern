@@ -116,3 +116,9 @@ out/
 .idea
 
 allure/
+
+/.pants.d/
+/dist/
+/.pids
+/.pants.workdir.file_lock*
+
