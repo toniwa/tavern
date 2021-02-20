@@ -104,7 +104,13 @@ def verify_generic(to_verify, schema):
     try:
         Draft7Validator.check_schema(schema)
     except jsonschema.exceptions.SchemaError as e:
-        logger.critical(schema)
+        raise BadSchemaError() from e
+
+    validator = Draft7Validator(schema)
+
+    try:
+        validator.validate(to_verify, schema)
+    except jsonschema.ValidationError as e:
         logger.error("e.message: %s", e.message)
         logger.error("e.context: %s", e.context)
         logger.error("e.cause: %s", e.cause)
@@ -114,13 +120,6 @@ def verify_generic(to_verify, schema):
         logger.error("e.schema_path: %s", e.schema_path)
         logger.error("e.validator: %s", e.validator)
         logger.error("e.validator_value: %s", e.validator_value)
-        logger.exception("Error validating %s", to_verify)
-        raise BadSchemaError() from e
-
-    try:
-        validate(to_verify, schema)
-    except jsonschema.ValidationError as e:
-        logger.error(e.message)
         logger.exception("Error validating %s", to_verify)
         raise BadSchemaError() from e
 

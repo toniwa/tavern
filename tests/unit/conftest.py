@@ -5,7 +5,7 @@ import pytest
 from tavern.plugins import load_plugins
 from tavern.util.strict_util import StrictLevel
 
-includes = {
+_includes = {
     "variables": {
         "request": {"prefix": "www.", "url": "google.com"},
         "test_auth_token": "abc123",
@@ -21,9 +21,9 @@ includes = {
 
 @pytest.fixture(scope="function", name="includes")
 def fix_example_includes():
-    return includes.copy()
+    return _includes.copy()
 
 
 @pytest.fixture(scope="session", autouse=True)
 def initialise_plugins():
-    load_plugins(includes)
+    load_plugins(_includes.copy())
