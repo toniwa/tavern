@@ -7,6 +7,13 @@ description: "Schema for Tavern test files"
 ###
 
 definitions:
+  strict_block:
+    oneOf:
+    - type: string
+    - type: array
+      items:
+        type: string
+
   verify_block:
     type: object
     additionalProperties: false
@@ -153,6 +160,14 @@ definitions:
         type: number
         description: How long to wait for requests to time out
 
+      file_body:
+        type: string
+        description: Path to a file to upload as the request body
+
+      files:
+        type: file_object
+        description: Files to send as part of the request
+
   mqtt_publish:
     type: object
     description: Publish MQTT message
@@ -207,6 +222,13 @@ definitions:
         type: integer
         description: QoS level that message should be received on
 
+      verify_response_with:
+        oneOf:
+        - $ref: "#/definitions/verify_block"
+        - type: array
+          items:
+            $ref: "#/definitions/verify_block"
+
   http_response:
     type: object
     additionalProperties: false
@@ -214,8 +236,7 @@ definitions:
 
     properties:
       strict:
-        type: string
-        description: Strictness setting for matching response
+        $ref: "#/definitions/strict_block"
 
       status_code:
         description: Status code(s) to match
@@ -333,6 +354,9 @@ properties:
     enum:
     - verify
     - run
+
+  strict:
+    $ref: "#/definitions/strict_block"
 
   includes:
     type: array
