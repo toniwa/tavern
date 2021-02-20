@@ -1,3 +1,4 @@
+import copy
 from unittest.mock import Mock
 
 import pytest
@@ -21,9 +22,9 @@ _includes = {
 
 @pytest.fixture(scope="function", name="includes")
 def fix_example_includes():
-    return _includes.copy()
+    return copy.deepcopy(_includes)
 
 
 @pytest.fixture(scope="session", autouse=True)
 def initialise_plugins():
-    load_plugins(_includes.copy())
+    load_plugins(_includes)
