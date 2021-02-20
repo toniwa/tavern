@@ -41,8 +41,7 @@ definitions:
         description: Stages to reference from tests
 
         items:
-          oneOf:
-          - $ref: "#/definitions/stage"
+          $ref: "#/definitions/stage"
 
   http_request:
     type: object
@@ -58,7 +57,7 @@ definitions:
         description: URL to make request to
 
       cert:
-        description: Certificate chain to use
+        description: Certificate to use - either a path to a certificate and key in one file, or a two item list containing the certificate and key separately
         oneOf:
         - type: string
         - type: array
@@ -66,6 +65,14 @@ definitions:
           maxItems: 2
           items:
             type: string
+
+      auth:
+        description: Authorisation to use for request - a list containing username and password
+        type: array
+        minItems: 2
+        maxItems: 2
+        items:
+          type: string
 
       verify:
         description: Whether to verify the server's certificates
@@ -293,6 +300,12 @@ properties:
     enum:
     - verify
     - run
+
+  includes:
+    type: array
+    minItems: 1
+    items:
+      $ref: "#/definitions/included_file"
 
   stages:
     type: array
