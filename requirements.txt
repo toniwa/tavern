@@ -14,7 +14,6 @@ twine
 wheel
 
 pytest~=6.2.2
-tavern~=1.14.0
 paho-mqtt~=1.5.1
 requests~=2.25.1
 PyYAML~=5.4.1

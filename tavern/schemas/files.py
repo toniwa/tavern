@@ -6,7 +6,6 @@ import tempfile
 
 import jsonschema
 from jsonschema import Draft7Validator
-from jsonschema import validate
 import yaml
 
 from tavern.plugins import load_plugins
@@ -53,9 +52,7 @@ class SchemaCache(object):
                     logger.debug("No schema defined for %s", p.name)
                 else:
                     initialisations = base_schema.get("initialisations", {})
-                    initialisations.update(
-                        plugin_schema.get("initialisation", {})
-                    )
+                    initialisations.update(plugin_schema.get("initialisation", {}))
 
                     base_schema["initialisations"] = initialisations
 
