@@ -15,6 +15,7 @@ definitions:
     - type: number
     - type: string
     - type: boolean
+    - type: sentinel
 
   included_file:
     type: object
@@ -109,7 +110,9 @@ definitions:
         description: Which cookies to use in the request
 
         items:
-          type: string
+          oneOf:
+          - type: string
+          - type: object
 
       json:
         description: JSON body to send in request body

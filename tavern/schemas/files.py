@@ -6,11 +6,12 @@ import tempfile
 
 import jsonschema
 from jsonschema import Draft7Validator
+from jsonschema.validators import extend
 import yaml
 
 from tavern.plugins import load_plugins
 from tavern.util.exceptions import BadSchemaError
-from tavern.util.loader import load_single_document_yaml
+from tavern.util.loader import TypeSentinel, load_single_document_yaml
 
 # core.yaml.safe_load = functools.partial(yaml.load, Loader=IncludeLoader)
 
@@ -91,22 +92,18 @@ def verify_generic(to_verify, schema):
     Raises:
         BadSchemaError: Schema did not match
     """
-    logger.debug("Verifying %s against %s", to_verify, schema)
 
-    # here = os.path.dirname(os.path.abspath(__file__))
-    # extension_module_filename = os.path.join(here, "extensions.py")
+    def is_sentinel(checker, instance):
+        return isinstance(instance, TypeSentinel)
 
-    # loaded = yaml.load(to_verify, Loader=IncludeLoader)
-
-    try:
-        Draft7Validator.check_schema(schema)
-    except jsonschema.exceptions.SchemaError as e:
-        raise BadSchemaError() from e
-
-    validator = Draft7Validator(schema)
+    CustomValidator = extend(
+        Draft7Validator,
+        type_checker=Draft7Validator.TYPE_CHECKER.redefine("sentinel", is_sentinel),
+    )
+    validator = CustomValidator(schema)
 
     try:
-        validator.validate(to_verify, schema)
+        validator.validate(to_verify)
     except jsonschema.ValidationError as e:
         logger.error("e.message: %s", e.message)
         logger.error("e.context: %s", e.context)
@@ -118,7 +115,8 @@ def verify_generic(to_verify, schema):
         logger.error("e.validator: %s", e.validator)
         logger.error("e.validator_value: %s", e.validator_value)
         logger.exception("Error validating %s", to_verify)
-        raise BadSchemaError() from e
+        msg = "err:\n---\n" + """"\n---\n""".join([str(i) for i in e.context])
+        raise BadSchemaError(msg) from e
 
 
 @contextlib.contextmanager
