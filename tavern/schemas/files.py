@@ -1,19 +1,19 @@
 import contextlib
 import copy
-import functools
 import logging
 import os
 import tempfile
 
-import pykwalify
-from pykwalify import core
+import jsonschema
+from jsonschema import Draft7Validator
+from jsonschema import validate
 import yaml
 
 from tavern.plugins import load_plugins
 from tavern.util.exceptions import BadSchemaError
-from tavern.util.loader import IncludeLoader, load_single_document_yaml
+from tavern.util.loader import load_single_document_yaml
 
-core.yaml.safe_load = functools.partial(yaml.load, Loader=IncludeLoader)
+# core.yaml.safe_load = functools.partial(yaml.load, Loader=IncludeLoader)
 
 logger = logging.getLogger(__name__)
 
@@ -52,9 +52,12 @@ class SchemaCache(object):
                     # Don't require a schema
                     logger.debug("No schema defined for %s", p.name)
                 else:
-                    base_schema["mapping"].update(
+                    initialisations = base_schema.get("initialisations", {})
+                    initialisations.update(
                         plugin_schema.get("initialisation", {})
                     )
+
+                    base_schema["initialisations"] = initialisations
 
             self._loaded[mangled] = base_schema
             return self._loaded[mangled]
@@ -93,18 +96,31 @@ def verify_generic(to_verify, schema):
     """
     logger.debug("Verifying %s against %s", to_verify, schema)
 
-    here = os.path.dirname(os.path.abspath(__file__))
-    extension_module_filename = os.path.join(here, "extensions.py")
+    # here = os.path.dirname(os.path.abspath(__file__))
+    # extension_module_filename = os.path.join(here, "extensions.py")
 
-    verifier = core.Core(
-        source_data=to_verify,
-        schema_data=schema,
-        extensions=[extension_module_filename],
-    )
+    # loaded = yaml.load(to_verify, Loader=IncludeLoader)
 
     try:
-        verifier.validate()
-    except pykwalify.errors.PyKwalifyException as e:
+        Draft7Validator.check_schema(schema)
+    except jsonschema.exceptions.SchemaError as e:
+        logger.critical(schema)
+        logger.error("e.message: %s", e.message)
+        logger.error("e.context: %s", e.context)
+        logger.error("e.cause: %s", e.cause)
+        logger.error("e.instance: %s", e.instance)
+        logger.error("e.path: %s", e.path)
+        logger.error("e.schema: %s", e.schema)
+        logger.error("e.schema_path: %s", e.schema_path)
+        logger.error("e.validator: %s", e.validator)
+        logger.error("e.validator_value: %s", e.validator_value)
+        logger.exception("Error validating %s", to_verify)
+        raise BadSchemaError() from e
+
+    try:
+        validate(to_verify, schema)
+    except jsonschema.ValidationError as e:
+        logger.error(e.message)
         logger.exception("Error validating %s", to_verify)
         raise BadSchemaError() from e
 
@@ -146,7 +162,7 @@ def verify_tests(test_spec, with_plugins=True):
     """
     here = os.path.dirname(os.path.abspath(__file__))
 
-    schema_filename = os.path.join(here, "tests.schema.yaml")
+    schema_filename = os.path.join(here, "tests.jsonschema.yaml")
     schema = load_schema_file(schema_filename, with_plugins)
 
     verify_generic(test_spec, schema)

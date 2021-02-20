@@ -59,7 +59,7 @@ def is_valid_reqresp_plugin(ext):
     return all(hasattr(ext.plugin, i) for i in required)
 
 
-class _PluginCache(object):
+class _PluginCache:
     # pylint: disable=inconsistent-return-statements
 
     def __init__(self):
