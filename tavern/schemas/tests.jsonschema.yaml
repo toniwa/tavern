@@ -7,6 +7,23 @@ description: "Schema for Tavern test files"
 ###
 
 definitions:
+  verify_block:
+    type: object
+    additionalProperties: false
+
+    required:
+    - function
+    properties:
+      function:
+        type: string
+        description: Path to function in the form import.path:name
+
+      extra_args:
+        type: array
+
+      extra_kwargs:
+        type: object
+
   any_json:
     oneOf:
     - type: array
@@ -118,17 +135,23 @@ definitions:
         description: JSON body to send in request body
         $ref: "#/definitions/any_json"
 
+      params:
+        description: Query parameters
+        type: request_object
+
+      headers:
+        description: Headers for request
+        type: request_object
+
       data:
-        type: object
         description: Form data to send in request
+        oneOf:
+        - type: request_object
+        - type: string
 
       timeout:
         type: number
         description: How long to wait for requests to time out
-
-      headers:
-        type: object
-        description: Request headers
 
   mqtt_publish:
     type: object
@@ -215,6 +238,13 @@ definitions:
       json:
         description: Expected JSON response
         $ref: "#/definitions/any_json"
+
+      verify_response_with:
+        oneOf:
+        - $ref: "#/definitions/verify_block"
+        - type: array
+          items:
+            $ref: "#/definitions/verify_block"
 
   stage_ref:
     type: object

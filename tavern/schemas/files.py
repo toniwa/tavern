@@ -10,6 +10,7 @@ from jsonschema.validators import extend
 import yaml
 
 from tavern.plugins import load_plugins
+from tavern.schemas.extensions import validate_request_json
 from tavern.util.exceptions import BadSchemaError
 from tavern.util.loader import TypeSentinel, load_single_document_yaml
 
@@ -93,12 +94,24 @@ def verify_generic(to_verify, schema):
         BadSchemaError: Schema did not match
     """
 
+    def is_str_or_bytes(checker, instance):
+        return Draft7Validator.TYPE_CHECKER.is_type(instance, "string") or isinstance(
+            instance, bytes
+        )
+
     def is_sentinel(checker, instance):
         return isinstance(instance, TypeSentinel)
 
+    def is_request_object(checker, instance):
+        return Draft7Validator.TYPE_CHECKER.is_type(
+            instance, "object"
+        ) and validate_request_json(instance, None, "")
+
     CustomValidator = extend(
         Draft7Validator,
-        type_checker=Draft7Validator.TYPE_CHECKER.redefine("sentinel", is_sentinel),
+        type_checker=Draft7Validator.TYPE_CHECKER.redefine("sentinel", is_sentinel)
+        .redefine("string", is_str_or_bytes)
+        .redefine("request_object", is_request_object),
     )
     validator = CustomValidator(schema)
 
