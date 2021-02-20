@@ -10,7 +10,7 @@ from jsonschema.validators import extend
 import yaml
 
 from tavern.plugins import load_plugins
-from tavern.schemas.extensions import validate_file_spec, validate_request_json
+from tavern.schemas.extensions import validate_file_spec, validate_json_with_ext, validate_request_json
 from tavern.util.exceptions import BadSchemaError
 from tavern.util.loader import TypeSentinel, load_single_document_yaml
 
@@ -107,6 +107,11 @@ def verify_generic(to_verify, schema):
             instance, "object"
         ) and validate_request_json(instance, None, "")
 
+    def is_request_object_with_ext(checker, instance):
+        return Draft7Validator.TYPE_CHECKER.is_type(
+            instance, "object"
+        ) and validate_json_with_ext(instance, None, "")
+
     def is_file_object(checker, instance):
         return Draft7Validator.TYPE_CHECKER.is_type(
             instance, "object"
@@ -117,6 +122,7 @@ def verify_generic(to_verify, schema):
         type_checker=Draft7Validator.TYPE_CHECKER.redefine("sentinel", is_sentinel)
         .redefine("string", is_str_or_bytes)
         .redefine("request_object", is_request_object)
+        .redefine("request_object_with_ext", is_request_object_with_ext)
         .redefine("file_object", is_file_object),
     )
     validator = CustomValidator(schema)

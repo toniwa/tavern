@@ -267,6 +267,14 @@ definitions:
           items:
             $ref: "#/definitions/verify_block"
 
+      headers:
+        description: Headers expected in response
+        type: object
+
+      save:
+        type: request_object_with_ext
+        description: Which objects to save from the response
+
   stage_ref:
     type: object
     description: Reference to another stage from an included config file
@@ -354,6 +362,35 @@ properties:
     enum:
     - verify
     - run
+
+  marks:
+    type: array
+    description: Pytest marks to use on test
+    items:
+      anyOf:
+      - type: string
+      - type: object
+        additionalProperties: false
+        properties:
+          filterwarnings:
+            type: string
+
+          skipif:
+            type: string
+
+          usefixtures:
+            # FIXME
+            type: array
+            items:
+              type: string
+
+          parametrize:
+            # FIXME
+            type: object
+            required:
+            - key
+            - vals
+
 
   strict:
     $ref: "#/definitions/strict_block"
