@@ -7,6 +7,34 @@ description: "Schema for Tavern test files"
 ###
 
 definitions:
+  included_file:
+    type: object
+    additionalProperties: false
+
+    required:
+    - name
+
+    properties:
+      name:
+        type: string
+        description: Name for this included file
+
+      description:
+        type: string
+        description: Extra description for included file
+
+      variables:
+        type: object
+        description: Variables to use in tests
+
+      stages:
+        type: array
+        description: Stages to reference from tests
+
+        items:
+          oneOf:
+          - $ref: "#/definitions/stage"
+
   http_request:
     type: object
     additionalProperties: false
@@ -148,6 +176,23 @@ definitions:
         type: object
         description: Expected JSON response
 
+  stage_ref:
+    type: object
+    description: Reference to another stage from an included config file
+    additionalProperties: false
+
+    required:
+    - type
+    - id
+
+    properties:
+      type:
+        type: string
+        pattern: ^ref$
+
+      id:
+        type: string
+
   stage:
     type: object
     description: One stage in a test
@@ -213,6 +258,12 @@ properties:
     type: string
     description: Name of test
 
+  _xfail:
+    type: string
+    enum:
+    - verify
+    - run
+
   stages:
     type: array
     minItems: 1
@@ -220,4 +271,6 @@ properties:
     description: Stages in test
 
     items:
-      $ref: "#/definitions/stage"
+      oneOf:
+      - $ref: "#/definitions/stage"
+      - $ref: "#/definitions/stage_ref"
