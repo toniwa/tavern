@@ -133,6 +133,7 @@ def verify_generic(to_verify, schema):
             Draft7Validator.TYPE_CHECKER.is_type(instance, "object")
             or isinstance(instance, TypeSentinel)
             or isinstance(instance, TypeConvertToken)
+            or instance is None
         )
 
     CustomValidator = extend(
