@@ -12,6 +12,7 @@ import yaml
 from tavern.plugins import load_plugins
 from tavern.schemas.extensions import (
     check_parametrize_marks,
+    check_strict_key,
     validate_file_spec,
     validate_json_with_ext,
     validate_request_json,
@@ -123,7 +124,7 @@ def verify_generic(to_verify, schema):
         )
 
     def is_boolean_or_token(checker, instance):
-        return Draft7Validator.TYPE_CHECKER.is_type(instance, "integer") or isinstance(
+        return Draft7Validator.TYPE_CHECKER.is_type(instance, "boolean") or isinstance(
             instance, (BoolToken)
         )
 
@@ -169,8 +170,10 @@ def verify_generic(to_verify, schema):
         "stages[*].request.params": validate_request_json,
         "stages[*].request.headers": validate_request_json,
         "stages[*].request.save": validate_json_with_ext,
-        "stages[*].request.files": validate_file_spec,
+        "stages[*].request.files[]": validate_file_spec,
         "marks[*].parametrize[]": check_parametrize_marks,
+        "stages[*].response.strict": validate_json_with_ext,
+        "strict": check_strict_key,
     }
 
     for path, func in extra_checks.items():

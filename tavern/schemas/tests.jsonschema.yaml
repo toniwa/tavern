@@ -378,13 +378,11 @@ properties:
             type: string
 
           usefixtures:
-            # FIXME
             type: array
             items:
               type: string
 
           parametrize:
-            # FIXME
             type: object
             required:
             - key
