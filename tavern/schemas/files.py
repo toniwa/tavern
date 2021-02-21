@@ -11,20 +11,28 @@ import yaml
 
 from tavern.plugins import load_plugins
 from tavern.schemas.extensions import (
+    check_parametrize_marks,
     validate_file_spec,
     validate_json_with_ext,
     validate_request_json,
 )
 from tavern.util.dict_util import recurse_access_key
 from tavern.util.exceptions import BadSchemaError
-from tavern.util.loader import TypeSentinel, load_single_document_yaml
+from tavern.util.loader import (
+    BoolToken,
+    FloatToken,
+    IntToken,
+    TypeConvertToken,
+    TypeSentinel,
+    load_single_document_yaml,
+)
 
 # core.yaml.safe_load = functools.partial(yaml.load, Loader=IncludeLoader)
 
 logger = logging.getLogger(__name__)
 
 
-class SchemaCache(object):
+class SchemaCache:
     """Caches loaded schemas"""
 
     def __init__(self):
@@ -99,31 +107,42 @@ def verify_generic(to_verify, schema):
         BadSchemaError: Schema did not match
     """
 
-    extra_checks = {
-        "stages[*].mqtt_publish.json": validate_request_json,
-        "stages[*].request.json": validate_request_json,
-        "stages[*].request.data": validate_request_json,
-        "stages[*].request.params": validate_request_json,
-        "stages[*].request.headers": validate_request_json,
-        "stages[*].request.save": validate_json_with_ext,
-        "stages[*].request.files[*]": validate_file_spec,
-    }
-
     def is_str_or_bytes(checker, instance):
         return Draft7Validator.TYPE_CHECKER.is_type(instance, "string") or isinstance(
             instance, bytes
         )
 
+    def is_number_or_token(checker, instance):
+        return Draft7Validator.TYPE_CHECKER.is_type(instance, "number") or isinstance(
+            instance, (IntToken, FloatToken)
+        )
+
+    def is_integer_or_token(checker, instance):
+        return Draft7Validator.TYPE_CHECKER.is_type(instance, "integer") or isinstance(
+            instance, (IntToken)
+        )
+
+    def is_boolean_or_token(checker, instance):
+        return Draft7Validator.TYPE_CHECKER.is_type(instance, "integer") or isinstance(
+            instance, (BoolToken)
+        )
+
     def is_object_or_sentinel(checker, instance):
-        return Draft7Validator.TYPE_CHECKER.is_type(instance, "object") or isinstance(
-            instance, TypeSentinel
+        return (
+            Draft7Validator.TYPE_CHECKER.is_type(instance, "object")
+            or isinstance(instance, TypeSentinel)
+            or isinstance(instance, TypeConvertToken)
         )
 
     CustomValidator = extend(
         Draft7Validator,
         type_checker=Draft7Validator.TYPE_CHECKER.redefine(
             "object", is_object_or_sentinel
-        ).redefine("string", is_str_or_bytes),
+        )
+        .redefine("string", is_str_or_bytes)
+        .redefine("boolean", is_boolean_or_token)
+        .redefine("integer", is_integer_or_token)
+        .redefine("number", is_number_or_token),
     )
     validator = CustomValidator(schema)
 
@@ -142,6 +161,17 @@ def verify_generic(to_verify, schema):
         logger.exception("Error validating %s", to_verify)
         msg = "err:\n---\n" + """"\n---\n""".join([str(i) for i in e.context])
         raise BadSchemaError(msg) from e
+
+    extra_checks = {
+        "stages[*].mqtt_publish.json": validate_request_json,
+        "stages[*].request.json": validate_request_json,
+        "stages[*].request.data": validate_request_json,
+        "stages[*].request.params": validate_request_json,
+        "stages[*].request.headers": validate_request_json,
+        "stages[*].request.save": validate_json_with_ext,
+        "stages[*].request.files[*]": validate_file_spec,
+        "marks[*].parametrize[*]": check_parametrize_marks,
+    }
 
     for path, func in extra_checks.items():
         data = recurse_access_key(to_verify, path)
