@@ -11,7 +11,6 @@ from .response import MQTTResponse
 
 logger = logging.getLogger(__name__)
 
-
 session_type = MQTTClient
 
 request_type = MQTTRequest
@@ -36,6 +35,6 @@ def get_expected_from_request(stage, test_block_config, session):
 verifier_type = MQTTResponse
 response_block_name = "mqtt_response"
 
-schema_path = join(abspath(dirname(__file__)), "schema.yaml")
+schema_path = join(abspath(dirname(__file__)), "jsonschema.yaml")
 with open(schema_path, "r", encoding="utf-8") as schema_file:
     schema = yaml.load(schema_file, Loader=yaml.SafeLoader)

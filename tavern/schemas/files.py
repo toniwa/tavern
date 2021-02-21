@@ -70,10 +70,9 @@ class SchemaCache:
                     # Don't require a schema
                     logger.debug("No schema defined for %s", p.name)
                 else:
-                    initialisations = base_schema.get("initialisations", {})
-                    initialisations.update(plugin_schema.get("initialisation", {}))
-
-                    base_schema["initialisations"] = initialisations
+                    base_schema["properties"].update(
+                        plugin_schema.get("properties", {})
+                    )
 
             self._loaded[mangled] = base_schema
             return self._loaded[mangled]
