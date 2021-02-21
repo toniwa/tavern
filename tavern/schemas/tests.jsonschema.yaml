@@ -212,8 +212,12 @@ definitions:
         description: Topic message should be received on
 
       payload:
-        type: string
         description: Expected raw payload in response
+        oneOf:
+        - type: number
+        - type: integer
+        - type: string
+        - type: boolean
 
       json:
         description: Expected JSON payload in response
@@ -226,6 +230,8 @@ definitions:
       qos:
         type: integer
         description: QoS level that message should be received on
+        minimum: 0
+        maximum: 2
 
       verify_response_with:
         oneOf:

@@ -23,9 +23,11 @@ from tavern.schemas.extensions import (
 from tavern.util.dict_util import recurse_access_key
 from tavern.util.exceptions import BadSchemaError
 from tavern.util.loader import (
+    AnythingSentinel,
     BoolToken,
     FloatToken,
     IntToken,
+    RawStrToken,
     TypeConvertToken,
     TypeSentinel,
     load_single_document_yaml,
@@ -110,9 +112,9 @@ def verify_generic(to_verify, schema):
         BadSchemaError: Schema did not match
     """
 
-    def is_str_or_bytes(checker, instance):
+    def is_str_or_bytes_or_token(checker, instance):
         return Draft7Validator.TYPE_CHECKER.is_type(instance, "string") or isinstance(
-            instance, bytes
+            instance, (bytes, RawStrToken)
         )
 
     def is_number_or_token(checker, instance):
@@ -143,7 +145,7 @@ def verify_generic(to_verify, schema):
         type_checker=Draft7Validator.TYPE_CHECKER.redefine(
             "object", is_object_or_sentinel
         )
-        .redefine("string", is_str_or_bytes)
+        .redefine("string", is_str_or_bytes_or_token)
         .redefine("boolean", is_boolean_or_token)
         .redefine("integer", is_integer_or_token)
         .redefine("number", is_number_or_token),
@@ -168,6 +170,7 @@ def verify_generic(to_verify, schema):
 
     extra_checks = {
         "stages[*].mqtt_publish.json[]": validate_request_json,
+        "stages[*].mqtt_response.payload[]": validate_request_json,
         "stages[*].request.json[]": validate_request_json,
         "stages[*].request.data[]": validate_request_json,
         "stages[*].request.params[]": validate_request_json,
