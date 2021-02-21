@@ -156,8 +156,14 @@ definitions:
         - type: string
 
       timeout:
-        type: number
         description: How long to wait for requests to time out
+        oneOf:
+        - type: number
+        - type: array
+          minItems: 2
+          maxItems: 2
+          items:
+            type: number
 
       file_body:
         type: string
