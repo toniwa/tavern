@@ -10,6 +10,7 @@ definitions:
   strict_block:
     oneOf:
     - type: string
+    - type: boolean
     - type: array
       items:
         type: string
@@ -35,11 +36,9 @@ definitions:
     oneOf:
     - type: array
     - type: object
-      additionalProperties: true
     - type: number
     - type: string
     - type: boolean
-    - type: sentinel
 
   included_file:
     type: object
@@ -144,16 +143,16 @@ definitions:
 
       params:
         description: Query parameters
-        type: request_object
+        type: object
 
       headers:
         description: Headers for request
-        type: request_object
+        type: object
 
       data:
         description: Form data to send in request
         oneOf:
-        - type: request_object
+        - type: object
         - type: string
 
       timeout:
@@ -165,7 +164,7 @@ definitions:
         description: Path to a file to upload as the request body
 
       files:
-        type: file_object
+        type: object
         description: Files to send as part of the request
 
   mqtt_publish:
@@ -272,7 +271,7 @@ definitions:
         type: object
 
       save:
-        type: request_object_with_ext
+        type: object
         description: Which objects to save from the response
 
   stage_ref:

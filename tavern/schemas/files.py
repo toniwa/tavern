@@ -10,7 +10,12 @@ from jsonschema.validators import extend
 import yaml
 
 from tavern.plugins import load_plugins
-from tavern.schemas.extensions import validate_file_spec, validate_json_with_ext, validate_request_json
+from tavern.schemas.extensions import (
+    validate_file_spec,
+    validate_json_with_ext,
+    validate_request_json,
+)
+from tavern.util.dict_util import recurse_access_key
 from tavern.util.exceptions import BadSchemaError
 from tavern.util.loader import TypeSentinel, load_single_document_yaml
 
@@ -94,36 +99,31 @@ def verify_generic(to_verify, schema):
         BadSchemaError: Schema did not match
     """
 
+    extra_checks = {
+        "stages[*].mqtt_publish.json": validate_request_json,
+        "stages[*].request.json": validate_request_json,
+        "stages[*].request.data": validate_request_json,
+        "stages[*].request.params": validate_request_json,
+        "stages[*].request.headers": validate_request_json,
+        "stages[*].request.save": validate_json_with_ext,
+        "stages[*].request.files[*]": validate_file_spec,
+    }
+
     def is_str_or_bytes(checker, instance):
         return Draft7Validator.TYPE_CHECKER.is_type(instance, "string") or isinstance(
             instance, bytes
         )
 
-    def is_sentinel(checker, instance):
-        return isinstance(instance, TypeSentinel)
-
-    def is_request_object(checker, instance):
-        return Draft7Validator.TYPE_CHECKER.is_type(
-            instance, "object"
-        ) and validate_request_json(instance, None, "")
-
-    def is_request_object_with_ext(checker, instance):
-        return Draft7Validator.TYPE_CHECKER.is_type(
-            instance, "object"
-        ) and validate_json_with_ext(instance, None, "")
-
-    def is_file_object(checker, instance):
-        return Draft7Validator.TYPE_CHECKER.is_type(
-            instance, "object"
-        ) and validate_file_spec(instance, None, "")
+    def is_object_or_sentinel(checker, instance):
+        return Draft7Validator.TYPE_CHECKER.is_type(instance, "object") or isinstance(
+            instance, TypeSentinel
+        )
 
     CustomValidator = extend(
         Draft7Validator,
-        type_checker=Draft7Validator.TYPE_CHECKER.redefine("sentinel", is_sentinel)
-        .redefine("string", is_str_or_bytes)
-        .redefine("request_object", is_request_object)
-        .redefine("request_object_with_ext", is_request_object_with_ext)
-        .redefine("file_object", is_file_object),
+        type_checker=Draft7Validator.TYPE_CHECKER.redefine(
+            "object", is_object_or_sentinel
+        ).redefine("string", is_str_or_bytes),
     )
     validator = CustomValidator(schema)
 
@@ -142,6 +142,11 @@ def verify_generic(to_verify, schema):
         logger.exception("Error validating %s", to_verify)
         msg = "err:\n---\n" + """"\n---\n""".join([str(i) for i in e.context])
         raise BadSchemaError(msg) from e
+
+    for path, func in extra_checks.items():
+        data = recurse_access_key(to_verify, path)
+        if data:
+            func(data, None, path)
 
 
 @contextlib.contextmanager
