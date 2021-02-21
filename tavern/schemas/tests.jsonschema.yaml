@@ -306,7 +306,6 @@ definitions:
       max_retries:
         type: integer
         description: Number of times to retry this request
-        minimum: 1
         default: 0
 
       skip:
