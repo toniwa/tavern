@@ -7,6 +7,8 @@ import tempfile
 import jsonschema
 from jsonschema import Draft7Validator
 from jsonschema.validators import extend
+import pykwalify
+from pykwalify import core
 import yaml
 
 from tavern.plugins import load_plugins
@@ -99,7 +101,7 @@ load_schema_file = SchemaCache()
 
 
 def verify_generic(to_verify, schema):
-    """Verify a generic file against a given schema
+    """Verify a generic file against a given jsonschema
 
     Args:
         to_verify (dict): Filename of source tests to check
@@ -190,6 +192,32 @@ def verify_generic(to_verify, schema):
                     func(element, None, path)
             else:
                 func(data, None, path)
+
+
+def verify_pykwalify(to_verify, schema):
+    """Verify a generic file against a given pykwalify schema
+    Args:
+        to_verify (dict): Filename of source tests to check
+        schema (dict): Schema to verify against
+    Raises:
+        BadSchemaError: Schema did not match
+    """
+    logger.debug("Verifying %s against %s", to_verify, schema)
+
+    here = os.path.dirname(os.path.abspath(__file__))
+    extension_module_filename = os.path.join(here, "extensions.py")
+
+    verifier = core.Core(
+        source_data=to_verify,
+        schema_data=schema,
+        extensions=[extension_module_filename],
+    )
+
+    try:
+        verifier.validate()
+    except pykwalify.errors.PyKwalifyException as e:
+        logger.exception("Error validating %s", to_verify)
+        raise BadSchemaError() from e
 
 
 @contextlib.contextmanager
