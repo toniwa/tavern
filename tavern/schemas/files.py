@@ -13,6 +13,7 @@ from tavern.plugins import load_plugins
 from tavern.schemas.extensions import (
     check_parametrize_marks,
     check_strict_key,
+    retry_variable,
     validate_file_spec,
     validate_json_with_ext,
     validate_request_json,
@@ -165,15 +166,16 @@ def verify_generic(to_verify, schema):
         raise BadSchemaError(msg) from e
 
     extra_checks = {
-        "stages[*].mqtt_publish.json": validate_request_json,
-        "stages[*].request.json": validate_request_json,
-        "stages[*].request.data": validate_request_json,
-        "stages[*].request.params": validate_request_json,
-        "stages[*].request.headers": validate_request_json,
-        "stages[*].request.save": validate_json_with_ext,
+        "stages[*].mqtt_publish.json[]": validate_request_json,
+        "stages[*].request.json[]": validate_request_json,
+        "stages[*].request.data[]": validate_request_json,
+        "stages[*].request.params[]": validate_request_json,
+        "stages[*].request.headers[]": validate_request_json,
+        "stages[*].request.save[]": validate_json_with_ext,
         "stages[*].request.files[]": validate_file_spec,
         "marks[*].parametrize[]": check_parametrize_marks,
-        "stages[*].response.strict": validate_json_with_ext,
+        "stages[*].response.strict[]": validate_json_with_ext,
+        "stages[*].max_retries[]": retry_variable,
         "strict": check_strict_key,
     }
 
