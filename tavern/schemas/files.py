@@ -169,14 +169,21 @@ def verify_generic(to_verify, schema):
         "stages[*].request.params": validate_request_json,
         "stages[*].request.headers": validate_request_json,
         "stages[*].request.save": validate_json_with_ext,
-        "stages[*].request.files[*]": validate_file_spec,
-        "marks[*].parametrize[*]": check_parametrize_marks,
+        "stages[*].request.files": validate_file_spec,
+        "marks[*].parametrize[]": check_parametrize_marks,
     }
 
     for path, func in extra_checks.items():
         data = recurse_access_key(to_verify, path)
         if data:
-            func(data, None, path)
+            if path.endswith("[]"):
+                if not isinstance(data, list):
+                    raise BadSchemaError
+
+                for element in data:
+                    func(element, None, path)
+            else:
+                func(data, None, path)
 
 
 @contextlib.contextmanager
