@@ -357,7 +357,7 @@ includes:
 paho-mqtt: *mqtt_spec
 
 stages:
-  - name: Test checking for lights status with anyint
+  - name: Test checking for lights status with anything with json
     mqtt_publish:
       topic: /device/123/status
     mqtt_response:
@@ -377,7 +377,7 @@ includes:
 paho-mqtt: *mqtt_spec
 
 stages:
-  - name: Test checking for lights status with anyint
+  - name: Test checking for lights status with anything with payload
     mqtt_publish:
       topic: /device/123/status
     mqtt_response:
