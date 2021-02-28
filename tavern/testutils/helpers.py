@@ -7,7 +7,7 @@ from box import Box
 import jmespath
 import jwt
 
-from tavern.schemas.files import verify_generic, verify_pykwalify
+from tavern.schemas.files import verify_pykwalify
 from tavern.testutils.jmesutils import actual_validation, validate_comparison
 from tavern.util import exceptions
 from tavern.util.dict_util import check_keys_match_recursive, recurse_access_key

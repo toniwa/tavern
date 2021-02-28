@@ -101,6 +101,38 @@ class SchemaCache:
 load_schema_file = SchemaCache()
 
 
+def is_str_or_bytes_or_token(checker, instance):  # pylint: disable=unused-argument
+    return Draft7Validator.TYPE_CHECKER.is_type(instance, "string") or isinstance(
+        instance, (bytes, RawStrToken, AnythingSentinel)
+    )
+
+
+def is_number_or_token(checker, instance):  # pylint: disable=unused-argument
+    return Draft7Validator.TYPE_CHECKER.is_type(instance, "number") or isinstance(
+        instance, (IntToken, FloatToken, AnythingSentinel)
+    )
+
+
+def is_integer_or_token(checker, instance):  # pylint: disable=unused-argument
+    return Draft7Validator.TYPE_CHECKER.is_type(instance, "integer") or isinstance(
+        instance, (IntToken, AnythingSentinel)
+    )
+
+
+def is_boolean_or_token(checker, instance):  # pylint: disable=unused-argument
+    return Draft7Validator.TYPE_CHECKER.is_type(instance, "boolean") or isinstance(
+        instance, (BoolToken, AnythingSentinel)
+    )
+
+
+def is_object_or_sentinel(checker, instance):  # pylint: disable=unused-argument
+    return (
+        Draft7Validator.TYPE_CHECKER.is_type(instance, "object")
+        or isinstance(instance, (TypeSentinel, TypeConvertToken))
+        or instance is None
+    )
+
+
 def verify_generic(to_verify, schema):
     """Verify a generic file against a given jsonschema
 
@@ -111,34 +143,6 @@ def verify_generic(to_verify, schema):
     Raises:
         BadSchemaError: Schema did not match
     """
-
-    def is_str_or_bytes_or_token(checker, instance):
-        return Draft7Validator.TYPE_CHECKER.is_type(instance, "string") or isinstance(
-            instance, (bytes, RawStrToken, AnythingSentinel)
-        )
-
-    def is_number_or_token(checker, instance):
-        return Draft7Validator.TYPE_CHECKER.is_type(instance, "number") or isinstance(
-            instance, (IntToken, FloatToken, AnythingSentinel)
-        )
-
-    def is_integer_or_token(checker, instance):
-        return Draft7Validator.TYPE_CHECKER.is_type(instance, "integer") or isinstance(
-            instance, (IntToken, AnythingSentinel)
-        )
-
-    def is_boolean_or_token(checker, instance):
-        return Draft7Validator.TYPE_CHECKER.is_type(instance, "boolean") or isinstance(
-            instance, (BoolToken, AnythingSentinel)
-        )
-
-    def is_object_or_sentinel(checker, instance):
-        return (
-            Draft7Validator.TYPE_CHECKER.is_type(instance, "object")
-            or isinstance(instance, TypeSentinel)
-            or isinstance(instance, TypeConvertToken)
-            or instance is None
-        )
 
     CustomValidator = extend(
         Draft7Validator,
