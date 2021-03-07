@@ -27,18 +27,15 @@ def _get_subscriptions(expected):
         return [get(i) for i in expected]
 
 
-def get_expected_from_request(stage, test_block_config, session):
+def get_expected_from_request(response_block, test_block_config, session):
+    expected = None
     # mqtt response is not required
-    m_expected = stage.get("mqtt_response")
-    if m_expected:
+    if response_block:
         # format so we can subscribe to the right topic
-        f_expected = format_keys(m_expected, test_block_config["variables"])
+        f_expected = format_keys(response_block, test_block_config["variables"])
         mqtt_client = session
-        for topic, qos in _get_subscriptions(f_expected):
-            mqtt_client.subscribe(topic, qos)
+        mqtt_client.subscribe(response_block["topic"], response_block.get("qos", 1))
         expected = f_expected
-    else:
-        expected = {}
 
     return expected
 

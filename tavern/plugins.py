@@ -216,10 +216,8 @@ def get_request_type(stage, test_block_config, sessions):
     return request_maker
 
 
-@attr.s(frozen=True)
-class ResponseVerifier:
+class ResponseVerifier(dict):
     plugin_name = attr.ib(type=str)
-    expected = attr.ib(type=dict)
 
 
 def _foreach_response(stage, test_block_config, action):
@@ -244,10 +242,11 @@ def _foreach_response(stage, test_block_config, action):
 
             for i in response_block:
                 r = action(p, i)
-                if isinstance(r, list):
-                    retvals.extend(r)
-                else:
-                    retvals.append(r)
+                if r is not None:
+                    if isinstance(r, list):
+                        retvals.extend(r)
+                    else:
+                        retvals.append(r)
 
     return retvals
 
@@ -274,7 +273,12 @@ def get_expected(stage, test_block_config, sessions):
         plugin_expected = p.plugin.get_expected_from_request(
             response_block, test_block_config, sessions[p.name]
         )
-        return ResponseVerifier(p.name, plugin_expected)
+        if plugin_expected:
+            plugin_expected = ResponseVerifier(**plugin_expected)
+            plugin_expected.plugin_name = p.name
+            return plugin_expected
+        else:
+            return None
 
     return _foreach_response(stage, test_block_config, action)
 
@@ -292,7 +296,7 @@ def get_verifiers(stage, test_block_config, sessions, expected):
         BaseResponse: response validator object with a verify(response) method
     """
 
-    def action(p, response_block):
+    def action(p, response_block):  # pylint: disable=unused-argument
         session = sessions[p.name]
         logger.debug(
             "Initialising verifier for %s (%s)", p.name, p.plugin.verifier_type
