@@ -17,6 +17,16 @@ request_type = MQTTRequest
 request_block_name = "mqtt_publish"
 
 
+def _get_subscriptions(expected):
+    def get(i):
+        return i["topic"], i["qos"]
+
+    if isinstance(expected, dict):
+        return [get(expected)]
+    elif isinstance(expected, list):
+        return [get(i) for i in expected]
+
+
 def get_expected_from_request(stage, test_block_config, session):
     # mqtt response is not required
     m_expected = stage.get("mqtt_response")
@@ -24,7 +34,8 @@ def get_expected_from_request(stage, test_block_config, session):
         # format so we can subscribe to the right topic
         f_expected = format_keys(m_expected, test_block_config["variables"])
         mqtt_client = session
-        mqtt_client.subscribe(f_expected["topic"], f_expected.get("qos", 1))
+        for topic, qos in _get_subscriptions(f_expected):
+            mqtt_client.subscribe(topic, qos)
         expected = f_expected
     else:
         expected = {}

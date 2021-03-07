@@ -206,14 +206,34 @@ def _calculate_stage_strictness(stage, test_block_config, test_spec):
 
     if test_spec.get("strict", None) is not None:
         stage_options = test_spec["strict"]
+        logger.debug("Getting test level strict setting: %s", stage_options)
+
+    set = False
+
+    def update_stage_options(new_option):
+        if set:
+            raise exceptions.DuplicateStrictError
+        logger.debug("Setting stage level strict setting: %s", new_option)
+        return new_option
 
     if stage.get("response", {}).get("strict", None) is not None:
-        stage_options = stage["response"]["strict"]
-    elif stage.get("mqtt_response", {}).get("strict", None) is not None:
-        stage_options = stage["mqtt_response"]["strict"]
+        stage_options = update_stage_options(stage["response"]["strict"])
+
+    mqtt_response = stage.get("mqtt_response", None)
+    if mqtt_response is not None:
+        if isinstance(mqtt_response, dict):
+            if mqtt_response.get("strict", None) is not None:
+                stage_options = update_stage_options(stage["mqtt_response"]["strict"])
+        elif isinstance(mqtt_response, list):
+            for response in mqtt_response:
+                if response.get("strict", None) is not None:
+                    stage_options = update_stage_options(response["strict"])
+        else:
+            raise exceptions.BadSchemaError(
+                "mqtt_response was invalid type {}".format(type(mqtt_response))
+            )
 
     if stage_options is not None:
-        logger.debug("Overriding global strictness")
         if stage_options is True:
             strict_level = StrictLevel.all_on()
         elif stage_options is False:

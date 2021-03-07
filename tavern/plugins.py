@@ -5,6 +5,7 @@ significantly if/when a proper plugin system is implemented!
 """
 import logging
 
+import attr
 import stevedore
 
 from tavern.util.dict_util import format_keys
@@ -215,6 +216,42 @@ def get_request_type(stage, test_block_config, sessions):
     return request_maker
 
 
+@attr.s(frozen=True)
+class ResponseVerifier:
+    plugin_name = attr.ib(type=str)
+    expected = attr.ib(type=dict)
+
+
+def _foreach_response(stage, test_block_config, action):
+    """Do something for each response
+
+    Args:
+        stage (dict): Stage of test
+        test_block_config (dict): Config for test
+        action ((p: {plugin, name}, response_block: dict) -> Any): function that takes (plugin, response block)
+    """
+
+    plugins = load_plugins(test_block_config)
+
+    retvals = []
+
+    for p in plugins:
+        response_block = stage.get(p.plugin.response_block_name)
+        if response_block is not None:
+
+            if isinstance(response_block, dict):
+                response_block = [response_block]
+
+            for i in response_block:
+                r = action(p, i)
+                if isinstance(r, list):
+                    retvals.extend(r)
+                else:
+                    retvals.append(r)
+
+    return retvals
+
+
 def get_expected(stage, test_block_config, sessions):
     """Get expected responses for each type of request
 
@@ -233,19 +270,13 @@ def get_expected(stage, test_block_config, sessions):
         dict: mapping of request type: expected response dict
     """
 
-    plugins = load_plugins(test_block_config)
+    def action(p, response_block):
+        plugin_expected = p.plugin.get_expected_from_request(
+            response_block, test_block_config, sessions[p.name]
+        )
+        return ResponseVerifier(p.name, plugin_expected)
 
-    expected = {}
-
-    for p in plugins:
-        if p.plugin.response_block_name in stage:
-            logger.debug("Getting expected response for %s", p.name)
-            plugin_expected = p.plugin.get_expected_from_request(
-                stage, test_block_config, sessions[p.name]
-            )
-            expected[p.name] = plugin_expected
-
-    return expected
+    return _foreach_response(stage, test_block_config, action)
 
 
 def get_verifiers(stage, test_block_config, sessions, expected):
@@ -261,19 +292,21 @@ def get_verifiers(stage, test_block_config, sessions, expected):
         BaseResponse: response validator object with a verify(response) method
     """
 
-    plugins = load_plugins(test_block_config)
+    def action(p, response_block):
+        session = sessions[p.name]
+        logger.debug(
+            "Initialising verifier for %s (%s)", p.name, p.plugin.verifier_type
+        )
 
-    verifiers = []
+        matching_expected = [i for i in expected if i.plugin_name == p.name]
+        verifiers = []
 
-    for p in plugins:
-        if p.plugin.response_block_name in stage:
-            session = sessions[p.name]
-            logger.debug(
-                "Initialising verifier for %s (%s)", p.name, p.plugin.verifier_type
-            )
+        for m in matching_expected:
             verifier = p.plugin.verifier_type(
-                session, stage["name"], expected[p.name], test_block_config
+                session, stage["name"], m, test_block_config
             )
             verifiers.append(verifier)
 
-    return verifiers
+        return verifiers
+
+    return _foreach_response(stage, test_block_config, action)
