@@ -1,4 +1,5 @@
 import copy
+from functools import cached_property
 import logging
 
 from _pytest import fixtures
@@ -55,6 +56,13 @@ class YamlItem(pytest.Item):
         self._fixtureinfo = fixtureinfo
         self.fixturenames = fixtureinfo.names_closure
         self._request = fixtures.FixtureRequest(self)
+
+    @cached_property
+    def location(self):
+        """get location in file"""
+        location = super().location
+        location = (location[0], self.spec.start_mark.line, location[2])
+        return location
 
     #     Hack to stop issue with pytest-rerunfailures
     _initrequest = initialise_fixture_attrs
