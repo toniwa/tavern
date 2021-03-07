@@ -285,9 +285,11 @@ def run_stage(sessions, stage, test_block_config):
         request_args=r.request_vars,
     )
 
+    # FIXME: MQTT responses also need to start listening _here_
+    verifiers = get_verifiers(stage, test_block_config, sessions, expected)
+
     response = r.run()
 
-    verifiers = get_verifiers(stage, test_block_config, sessions, expected)
     for v in verifiers:
         saved = v.verify(response)
         test_block_config["variables"].update(saved)
