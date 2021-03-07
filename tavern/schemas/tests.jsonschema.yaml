@@ -346,7 +346,12 @@ definitions:
         $ref: "#/definitions/mqtt_publish"
 
       mqtt_response:
-        $ref: "#/definitions/mqtt_response"
+        oneOf:
+        - $ref: "#/definitions/mqtt_response"
+        - type: array
+          items:
+            $ref: "#/definitions/mqtt_response"
+
 
       request:
         $ref: "#/definitions/http_request"
